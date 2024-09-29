@@ -11,8 +11,8 @@ This can be gotten from https://www.openstreetmap.org/
 - Mininum Longitude (West most point)
 
 In this case 
-max_lon, min_lon = 2.58, 14.72
-max_lat, min_lat = 4.17, 14.01
+min_lat, max_lat  = 4.17, 14.01
+min_lon, max_lon = 2.58, 14.72
 
 * You can clone the repository from 
 https://github.com/Daniel-Ezeh/PlusCodeMapping.git

@@ -92,11 +92,9 @@ def merge_results(results):
 # Main block to prevent multiprocessing errors
 if __name__ == '__main__':
     # Generate grid for Nig (coordinates are approximate)
-    min_lat, max_lat = -13.459, 5.354
-    #1.9453, 2.3453
-
-    min_lon, max_lon = 12.039, 31.305
-    # 21.9574, 22.575
+    min_lat, max_lat  = 4.17, 14.01
+    min_lon, max_lon = 2.58, 14.72
+  
     step_lat = 0.009 
     step_lng = 0.014
     grid_points = generate_grid(min_lat, max_lat, min_lon, max_lon, step_lat, step_lng)
