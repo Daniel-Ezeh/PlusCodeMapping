@@ -4,13 +4,13 @@ from openlocationcode import openlocationcode as olc
 import pandas as pd
 import numpy as np
 import multiprocessing
-import json
 
-# Load the GeoJSON of DRC provinces
-gdf = gpd.read_file("gadm41_COD_1.json")
 
-# Combine all province geometries to create a single DRC boundary
-drc_boundary = gdf.unary_union  # Create a single MultiPolygon that represents the entire DRC
+# Load the GeoJSON of Nig states
+gdf = gpd.read_file("gadm41_NGA_1.json")
+
+# Combine all state geometries to create a single Nig boundary
+ng_boundary = gdf.unary_union  # Create a single MultiPolygon that represents the entire Nig
 
 
 # Define a function to create a grid of lat/lon points
@@ -22,14 +22,13 @@ def generate_grid(min_lat, max_lat, min_lon, max_lon, step_lat, step_lon):
 # Define the function that will run in parallel
 def process_chunk(chunk, gdf):
     results = []
-    plus_codes_by_province = {}
+    plus_codes_by_state = {}
     for lat, lon in chunk:
         print("%"*20)
         plus_code = olc.encode(lat, lon, 6)
         plus_code_details = olc.decode(plus_code)
         # point = Point(lon, lat)
         point = Point(plus_code_details.longitudeCenter, plus_code_details.latitudeCenter)
-
 
         # Create a polygon (bounding box) using lat/lon bounds
         polygon = Polygon([
@@ -50,35 +49,32 @@ def process_chunk(chunk, gdf):
             "longitudeLo": plus_code_details.longitudeLo
         }
 
-        # Convert the dictionary to a JSON string
-        # No need
-        plus_code_details_json = plus_code_details_dict
 
-        # Check if the polygon is within the DRC boundary
-        if drc_boundary.contains(point):
-            # Check which province this point belongs to
+        # Check if the polygon is within the Nig boundary
+        if ng_boundary.contains(point):
+            # Check which state this point belongs to
             for idx, row in gdf.iterrows():
                 if row['geometry'].contains(point):
                 # and row['geometry'].intersects(polygon):
                     print("YES "*20)
-                    province_name = row['NAME_1']  # Assumed column name for province
-                    if province_name not in plus_codes_by_province:
+                    state_name = row['NAME_1']  # Assumed column name for state
+                    if state_name not in plus_codes_by_state:
                         print("NO "*20)
-                        plus_codes_by_province[province_name] = []
+                        plus_codes_by_state[state_name] = []
 
                     # Append data as a dictionary to results list
                     results.append({
                         'pluscode': plus_code,
-                        'province': province_name,
+                        'state': state_name,
                         'geometry': polygon.wkt,  # Store the geometry as Well-Known Text (WKT)
-                        'pluscodeDetails': plus_code_details_json
+                        'pluscodeDetails': plus_code_details_dict 
                     })
                     break
         else:
-            # Label as "offshore" if the polygon is outside the DRC boundary
+            # Label as "offshore" if the polygon is outside the Nig boundary
             results.append({
                 'pluscode': plus_code,
-                'province': 'offshore',
+                'state': 'offshore',
                 'geometry': polygon.wkt,  # Store the polygon as Well-Known Text (WKT)
                 'pluscodeDetails': plus_code_details_dict  # Store the dictionary directly
             })
@@ -95,11 +91,11 @@ def merge_results(results):
 
 # Main block to prevent multiprocessing errors
 if __name__ == '__main__':
-    # Generate grid for DRC (coordinates are approximate)
-    min_lat, max_lat =   -13.459, 5.354
+    # Generate grid for Nig (coordinates are approximate)
+    min_lat, max_lat = -13.459, 5.354
     #1.9453, 2.3453
 
-    min_lon, max_lon =    12.039, 31.305
+    min_lon, max_lon = 12.039, 31.305
     # 21.9574, 22.575
     step_lat = 0.009 
     step_lng = 0.014
@@ -120,11 +116,10 @@ if __name__ == '__main__':
     # Convert the merged results to a DataFrame
     df = pd.DataFrame(final)
 
-    # # Drop duplicate rows based on 'pluscode', 'geometry' and 'province'
-    df = df.drop_duplicates(subset=['pluscode', 'province', 'geometry'])
+    # # Drop duplicate rows based on 'pluscode', 'geometry' and 'state'
+    df = df.drop_duplicates(subset=['pluscode', 'state', 'geometry'])
 
     # Save the DataFrame to a CSV file
-    df.to_csv('plus_codes_by_province.csv', index=False)
+    df.to_csv('plus_codes_by_state.csv', index=False)
 
-    print("CSV file saved as 'plus_codes_by_province.csv'")
-
+    print("CSV file saved as 'plus_codes_by_state.csv'")
